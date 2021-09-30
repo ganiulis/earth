@@ -1309,7 +1309,6 @@ if ( Object.isExtensible( THREE ) ) {
 
 export {
 	CustomMaterial,
-
 	patchShader,
 	extendMaterial,
 	cloneUniforms,

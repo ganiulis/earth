@@ -88,7 +88,7 @@ var sunCoordY = -Math.sin(sunCoordRadians) * sunCoordRadius
 sunMesh.position.set(sunCoordX, 0, sunCoordY)
 
 camera.position.setX(-sunCoordX/100 - 5 - 2);
-camera.position.setY(-1);
+camera.position.setY(10);
 camera.position.setZ(sunCoordY/100 + 11);
 
 // camera.lookAt(sunCoordX/100 + 7, -5, sunCoordY/100)
@@ -163,7 +163,7 @@ earthTiltGroup.add(earthMesh)
 scene.add(earthTiltGroup)
 
 const earthAtmos = new THREE.Mesh(
-  new THREE.SphereGeometry(3.02, 64, 64),
+  new THREE.SphereGeometry(3.1, 64, 64),
   new THREE.ShaderMaterial({
     vertexShader: atmosVertexShader,
     fragmentShader: atmosFragmentShader,
@@ -179,7 +179,7 @@ const earthCloudLayer = new THREE.Mesh(
     map: new THREE.TextureLoader().load('assets/img/earth/cloudmap.jpg'),
     alphaMap: new THREE.TextureLoader().load('assets/img/earth/cloudmap.jpg'),
     side: THREE.DoubleSide,
-    opacity: 0.8,
+    opacity: 0.7,
     transparent: true,
     depthWrite: false
   })
@@ -253,7 +253,7 @@ scene.add(moonTiltGroup)
 
 const moonRadius = 1737.4
 const earthRadius = 6371
-const moonCoordRadius = 35 // average
+const moonCoordRadius = 75 // average
 const moonPerigee = moonCoordRadius * (362600 + moonRadius + earthRadius) / (384000 + moonRadius + earthRadius)
 const moonApogee = moonCoordRadius * (405400 + moonRadius + earthRadius) / (384000 + moonRadius + earthRadius)
 const moonOrbitEllipse = (moonApogee / moonPerigee - 1) / 2 + 1
@@ -296,6 +296,9 @@ scene.add(lightHelper, gridHelper);
 */
 
 const controls = new OrbitControls(camera, renderer.domElement);
+
+controls.minDistance = 4;
+controls.maxDistance = 20;
 
 function add(accumulator, a) {
   return accumulator + a;
