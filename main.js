@@ -1,7 +1,6 @@
 import './css/style.css'
 
 import * as THREE from 'three'
-// import { extendMaterial, CustomMaterial } from './js/ExtendMaterial.module'
 
 import atmosVertexShader from './assets/shaders/earth/atmosVertex.glsl'
 import atmosFragmentShader from './assets/shaders/earth/atmosFragment.glsl'
