@@ -1297,17 +1297,13 @@ import * as THREE from "three";
 
 	sharedLightsUniforms = cloneUniforms( UniformsLib.lights, {}, false, true );
 
-
 	if ( Object.isExtensible( THREE ) ) {
-
 		THREE.cloneUniforms = cloneUniforms;
 		THREE.cloneUniform = cloneUniform;
 		THREE.patchShader = patchShader;
 		THREE.mapShader = mapShader;
 		THREE.extendMaterial = extendMaterial;
 		THREE.CustomMaterial = CustomMaterial;
-
 	}
-
 
 })( THREE );

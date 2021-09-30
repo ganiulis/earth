@@ -1,27 +1,18 @@
 {
-  "name": "ganiulis",
+  "name": "earth",
   "version": "1.0.0",
-  "main": "sass/style.scss",
+  "main": "main.js",
+  "homepage": "https://ganiulis.github.io/earth",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview",
-    "css-build": "node-sass --omit-source-map-url sass/style.scss css/style.css",
-    "css-watch": "npm run css-build -- --watch",
-    "start": "npm run css-watch"
+    "serve": "vite preview"
   },
   "devDependencies": {
     "vite": "^2.5.7",
     "vite-plugin-string": "^1.0.1"
   },
   "dependencies": {
-    "@creativebulma/bulma-collapsible": "^1.0.4",
-    "bulma": "^0.9.3",
-    "bulma-start": "0.0.4",
-    "glsl-fractal-brownian-noise": "^1.1.0",
-    "glsl-noise": "0.0.0",
-    "glslify": "^7.1.1",
-    "node-sass": "^6.0.1",
     "three": "^0.132.2"
   }
 }

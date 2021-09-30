@@ -1,8 +1,7 @@
 import './css/style.css'
 
 import * as THREE from 'three'
-
-import { extendMaterial, CustomMaterial } from './js/ExtendMaterial.module'
+// import { extendMaterial, CustomMaterial } from './js/ExtendMaterial.module'
 
 import atmosVertexShader from './assets/shaders/earth/atmosVertex.glsl'
 import atmosFragmentShader from './assets/shaders/earth/atmosFragment.glsl'
@@ -14,7 +13,8 @@ import sunAtmosFragmentShader from './assets/shaders/sun/sunAtmosFragment.glsl'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Lensflare, LensflareElement } from 'three/examples/jsm/objects/Lensflare'
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module'
-import { Vector2, Vector3 } from 'three'
+
+
 
 const scene = new THREE.Scene()
 
@@ -24,7 +24,6 @@ const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#bg'),
   antialias: true
 })
-
 
 renderer.setPixelRatio( window.devicePixelRatio );
 renderer.setSize( window.innerWidth, window.innerHeight );
@@ -73,14 +72,14 @@ scene.add(sunMesh)
 */
 
 //calculating the current position of the sun
-/*
+
 var dateNow = new Date();
 var dateStart = new Date(dateNow.getFullYear(), 0, 0);
 var dateDiff = dateNow - dateStart;
 var dateDay = Math.floor(dateDiff / 86400000);
-*/
+
 // calculating the position of the sun based on the current season with the help of some trigonometry
-var sunRadian = 0 // (dateDay - 172) * 2 / 365.242199 * Math.PI // currently unused
+var sunRadian = (dateDay - 172) * 2 / 365.242199 * Math.PI
 const sunCoordRadius = 1000 // distance from Earth; arbitrary number
 var sunCoordRadians = sunRadian
 var sunCoordX = Math.cos(sunCoordRadians) * sunCoordRadius
@@ -98,38 +97,58 @@ var earthSize = 3 // will also be used to calculate the relative size of the moo
 
 const earthMesh = new THREE.Mesh(
   new THREE.SphereGeometry(earthSize, 128, 128),
-  new extendMaterial(new THREE.MeshPhongMaterial({      
+  new THREE.MeshPhongMaterial({      
     specularMap: new THREE.TextureLoader().load('assets/img/earth/specmap.jpg'),
     shininess: 50,
     bumpMap: new THREE.TextureLoader().load('assets/img/earth/bumpmap.jpg'),
     bumpScale: 0.05,
     //normalMap: new THREE.TextureLoader().load('assets/img/earth/normalmap.jpg'),
     //normalScale: new THREE.Vector2(5, 5)
-  }),
-  {
-    class: CustomMaterial,  // In this case ShaderMaterial would be fine too, just for some features such as envMap this is required
-    vertexHeader: `
-      uniform vec3 sunPosition;
-      varying vec3 v_vertToLight;
-    `,
-    vertex: {
-      'project_vertex': {
-        'vec4 mvPosition = vec4( transformed, 1.0 );':`
-          vec4 viewSunPos = viewMatrix * vec4(sunPosition, 1.0);
-          v_vertToLight = normalize(viewSunPos.xyz - mvPosition.xyz);
-        `
-      },
-      'void main() {':`
+  })
+)
+  
 
+earthMesh.material.onBeforeCompile = shader => {
+  shader.uniforms.sunPosition = {
+      value: new THREE.Vector3(sunCoordX, 0.0, sunCoordY)
+  }
+  shader.uniforms.dayTexture = {
+    value: new THREE.TextureLoader().load('assets/img/earth/colormap.jpg')
+  }
+  shader.uniforms.nightTexture = {
+    value: new THREE.TextureLoader().load('assets/img/earth/nightmap.jpg')
+  }
+  shader.vertexShader = shader.vertexShader.replace('#define PHONG',
+    [
+      '#define PHONG',
       `
-    },
-    fragmentHeader: `
-      uniform sampler2D dayTexture;
-      uniform sampler2D nightTexture;
-      varying vec3 v_vertToLight;
-    `,
-    fragment: {
-      '#include <clipping_planes_fragment>' : `
+        uniform vec3 sunPosition;
+        varying vec3 v_vertToLight;
+      `
+    ].join( '\n' )
+  )
+  shader.vertexShader = shader.vertexShader.replace('#include <project_vertex>',
+    [
+      '#include <project_vertex>',
+      `
+        vec4 viewSunPos = viewMatrix * vec4(sunPosition, 1.0);
+        v_vertToLight = normalize(viewSunPos.xyz - mvPosition.xyz);
+      `
+    ].join( '\n' )
+  )
+  shader.fragmentShader = shader.fragmentShader.replace('#define PHONG',
+    [
+      '#define PHONG',
+      `
+        uniform sampler2D dayTexture;
+        uniform sampler2D nightTexture;
+        varying vec3 v_vertToLight;
+      `
+    ].join( '\n' )
+  )
+  shader.fragmentShader = shader.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );',
+    [ 
+      `
         float intensity = 1.20 - dot(vNormal, vec3(0.0, 0.0, 1.0));
         vec3 atmosphere = vec3(0.1, 0.3, 0.6) * pow(intensity, 1.8);
 
@@ -140,22 +159,12 @@ const earthMesh = new THREE.Mesh(
         cosineAngleSunToNormal = clamp(cosineAngleSunToNormal * 10.0, -1.25, 1.0);
         float mixAmountDaylight = cosineAngleSunToNormal * 0.5 + 0.5;
         vec3 color = mix(nightColor, dayColor, mixAmountDaylight);
-      `,
-      '@vec4 diffuseColor = vec4( diffuse, opacity );': 'vec4 diffuseColor = vec4( color + atmosphere, opacity );'
-    },
-    uniforms: {
-      sunPosition: {
-        value: new THREE.Vector3(sunCoordX, 0.0, sunCoordY)
-      },
-      dayTexture: {
-        value: new THREE.TextureLoader().load('assets/img/earth/colormap.jpg')
-      },
-      nightTexture: {
-        value: new THREE.TextureLoader().load('assets/img/earth/nightmap.jpg')
-      }
-    }
-  })
-)
+        vec4 diffuseColor = vec4( color + atmosphere, opacity );
+      `
+    ].join( '\n' )
+  )
+}
+
 var earthTiltRadians = 23.44 * Math.PI / 180; // tilt of Earth in radians
 const earthTiltGroup = new THREE.Group() // applies tilt so that rotation is applied correctly
 earthTiltGroup.rotateOnAxis(new THREE.Vector3(0, 0, 1), -earthTiltRadians)
@@ -185,22 +194,26 @@ const earthCloudLayer = new THREE.Mesh(
   })
 );
 
+var v, j = sunCoordX, sunCoordY
+
 earthCloudLayer.material.onBeforeCompile = shader => {
-  shader.vertexShader = shader.vertexShader.replace(
-    '#define PHONG',
+  shader.uniforms.sunPosition = { 
+    value: new THREE.Vector3(v, 0.0, j) 
+  }
+  shader.vertexShader = shader.vertexShader.replace('#define PHONG',
     [
       '#define PHONG',`
+        varying vec3 sunPosition;
         varying vec3 v_vertToLight;
         varying vec2 normalScale;
       `
     ].join( '\n' )
   )
-  shader.vertexShader = shader.vertexShader.replace(
-    '#include <project_vertex>',
+  shader.vertexShader = shader.vertexShader.replace('#include <project_vertex>',
     [
       `
       vec4 mvPosition = vec4( transformed, 1.0 );
-      vec4 viewSunPos = viewMatrix * vec4(vec3(100.0, 0.0, 0.0), 1.0); // hard-coded, will need to fix later to accept sunRadian
+      vec4 viewSunPos = viewMatrix * vec4(vec3(-165.91479381383044, 0.0, -986.1400920729843), 1.0); // it does work, but it doesn't wanna
       v_vertToLight = normalize(viewSunPos.xyz - mvPosition.xyz);
       #ifdef USE_INSTANCING
         mvPosition = instanceMatrix * mvPosition;
@@ -210,8 +223,7 @@ earthCloudLayer.material.onBeforeCompile = shader => {
       `
     ].join('\n')
   )
-  shader.fragmentShader = shader.fragmentShader.replace(
-    '#define PHONG',
+  shader.fragmentShader = shader.fragmentShader.replace('#define PHONG',
     [
       '#define PHONG',`
         varying vec3 v_vertToLight;
@@ -219,8 +231,7 @@ earthCloudLayer.material.onBeforeCompile = shader => {
       `
     ].join( '\n' )
   )
-  shader.fragmentShader = shader.fragmentShader.replace(
-    'vec4 diffuseColor = vec4( diffuse, opacity );',
+  shader.fragmentShader = shader.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );',
     [ 
       'vec3 cloudText = texture2D(cloudTexture, vUv).xyz;',
       'float cosineAngleSunToNormal = dot(normalize(vNormal), v_vertToLight);',
@@ -231,7 +242,6 @@ earthCloudLayer.material.onBeforeCompile = shader => {
     ].join( '\n' )
   )
 }
-
 earthMesh.add(earthCloudLayer);
 earthCloudLayer.geometry.applyMatrix4(new THREE.Matrix4().makeRotationZ(-earthTiltRadians));
 
@@ -340,8 +350,8 @@ var moonCycle = rotationVelocity / 27.322
 const clockTimer = new THREE.Clock(true)
 
 function animate(t) {
-  earthMesh.material.uniforms.sunPosition.value.x = sunCoordX
-  earthMesh.material.uniforms.sunPosition.value.z = sunCoordY
+  //earthMesh.material.uniforms.sunPosition.value.x = sunCoordX
+  //earthMesh.material.uniforms.sunPosition.value.z = sunCoordY
 
   moonCoordDegrees = (sunRadian + ( 45 * Math.PI / 180 ) + clockTimer.getElapsedTime() * moonCycle )
   moonCoordX = Math.sin(moonCoordDegrees) * moonCoordRadius
