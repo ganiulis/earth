@@ -13,8 +13,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Lensflare, LensflareElement } from 'three/examples/jsm/objects/Lensflare'
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module'
 
-
-
 const scene = new THREE.Scene()
 
 const camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 0.1, 1000 )

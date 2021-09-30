@@ -1,7 +1,6 @@
 {
   "name": "earth",
   "version": "1.0.0",
-  "main": "main.js",
   "homepage": "https://ganiulis.github.io/earth",
   "scripts": {
     "dev": "vite",
