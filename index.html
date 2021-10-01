@@ -34,8 +34,18 @@
       antialias: true
     })
 
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setPixelRatio( window.devicePixelRatio )
+    renderer.setSize( window.innerWidth, window.innerHeight )
+
+    // mouse controls restrictions
+    const controls = new OrbitControls(camera, renderer.domElement)
+    controls.minDistance = 4
+    controls.maxDistance = 20
+    controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.DOLLY,
+      // RIGHT: THREE.MOUSE.PAN
+    }
 
     // creation of skybox
     function createPathStrings(filename) {
@@ -314,11 +324,6 @@
     scene.add(lightHelper, gridHelper);
     */
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-
-    controls.minDistance = 4;
-    controls.maxDistance = 20;
-
     function add(accumulator, a) {
       return accumulator + a;
     }
@@ -338,29 +343,30 @@
     }
     Array(451).fill().forEach(addStar);
 
-    function moveCamera() {
-      const t = document.body.getBoundingClientRect().top;
-      camera.position.x = t * -0.01;
-      camera.position.y = t * 0.002;
-      camera.position.z = t * 0.0002;
-      camera.rotation.y = t * 0.0002;
-    }
-
-    // document.body.onscroll = moveCamera;
-    // moveCamera();
-
-    const gui = new GUI()
-
-    var cycleSpeed = 60 // 1 Earth cycle & 1/27.322 Moon cycles in n seconds
-    var rotationVelocity = 2 * Math.PI / cycleSpeed
-    var earthCycle = 2 * Math.PI / cycleSpeed
+    var cycleSpeed = {} 
+    cycleSpeed.value = 60 // 1 Earth cycle & 1/27.322 Moon cycles in n seconds; 86160 is exactly one full day
+    var rotationVelocity = 2 * Math.PI / cycleSpeed.value
+    var sunCycle = 2 * Math.PI / cycleSpeed.value / 365.24
+    var earthCycle = 2 * Math.PI / cycleSpeed.value
     var moonCycle = rotationVelocity / 27.322
 
     const clockTimer = new THREE.Clock(true)
 
+    const gui = new GUI()
+    const earthFolder = gui.addFolder('Earth')
+    earthFolder.add(cycleSpeed, 'value', 0, 120)
+    earthFolder.open()
+    gui.close()
+
     function animate(t) {
-      //earthMesh.material.uniforms.sunPosition.value.x = sunCoordX
-      //earthMesh.material.uniforms.sunPosition.value.z = sunCoordY
+      /*
+      sunCoordX = Math.cos(sunCoordRadians) * sunCoordRadius
+      sunCoordY = -Math.sin(sunCoordRadians) * sunCoordRadius
+      sunMesh.position.set(sunCoordX, 0, sunCoordY)
+      */
+
+      earthMesh.rotation.y = clockTimer.getElapsedTime() * earthCycle
+      earthCloudLayer.rotation.y = clockTimer.getElapsedTime() * -0.01
 
       moonCoordDegrees = (sunRadian + ( 45 * Math.PI / 180 ) + clockTimer.getElapsedTime() * moonCycle )
       moonCoordX = Math.sin(moonCoordDegrees) * moonCoordRadius
@@ -368,9 +374,6 @@
       moonCoordZ = Math.sin(moonCoordDegrees) * 3 // used to exaggerate the moon's orbital inclination for effect
       moonMesh.position.set(moonCoordX, moonCoordZ, moonCoordY + moonOrbitEllipse)
       moonMesh.rotation.y = clockTimer.getElapsedTime() * moonCycle + Math.PI
-
-      earthMesh.rotation.y = clockTimer.getElapsedTime() * earthCycle
-      earthCloudLayer.rotation.y = clockTimer.getElapsedTime() * -0.01
 
       controls.update()
 
